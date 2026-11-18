@@ -55,53 +55,71 @@ flowchart LR
 
 ## Results
 
-The following values are transcribed from the project's final report, `MDP_Report_IDS.docx`.
+The figures below are taken directly from the saved execution outputs in the project's Google Colab notebook. They distinguish Keras' default-threshold evaluation from the later ROC-selected-threshold evaluation.
 
-### Dataset
+### Dataset and preprocessing
 
 | Item | Training set | Test set |
 |---|---:|---:|
-| Samples | 125,973 | 22,544 |
-| Normal records | 67,343 | 9,711 |
-| Attack records | 58,630 | 12,833 |
-| Encoded columns including label | 123 | 123 |
+| Original records | 125,973 | 22,544 |
+| Original columns | 43 | 43 |
+| Columns after one-hot encoding (including label) | 123 | 123 |
 | Model input features | 122 | 122 |
 
-### Reported model performance
+The notebook removes the `difficulty` column, converts labels to Normal (0) and Attack (1), one-hot encodes categorical features, aligns test columns to the training columns, and standardizes features.
 
-| Metric | Reported value |
+### Training results
+
+| Metric | Notebook output |
 |---|---:|
-| Training accuracy (separate threshold-based summary) | 97.21% |
-| Validation accuracy (epoch 50 training history) | 99.71% |
-| Test accuracy (Youden-threshold predictions) | **85.81%** |
-| Selected Youden J threshold | 0.0031 |
-| Normal precision | 0.77 |
-| Normal recall | 0.95 |
-| Normal F1-score | 0.85 |
-| Attack precision | 0.95 |
-| Attack recall | 0.79 |
-| Attack F1-score | 0.86 |
-| Macro-average F1-score | 0.86 |
-| Weighted-average F1-score | 0.86 |
+| Epochs completed | 50 |
+| Final training accuracy (epoch 50) | 99.66% |
+| Final validation accuracy (epoch 50) | 99.73% |
+| Final training loss | 0.0157 |
+| Final validation loss | 0.0138 |
+| Balanced class weight — Normal (0) | 0.9353 |
+| Balanced class weight — Attack (1) | 1.0743 |
+
+### Test evaluation
+
+Keras' `model.evaluate()` uses the default binary classification threshold:
+
+| Metric | Value |
+|---|---:|
+| Test accuracy (default threshold) | 81.32% |
+| Test loss | 1.5212 |
+
+The notebook then selects a threshold using the ROC curve and Youden's J statistic:
+
+| Metric | Value |
+|---|---:|
+| Selected threshold | **0.0031** |
+| Threshold-based test accuracy | **85.91%** |
+| Correct test predictions | 19,367 / 22,544 |
+
+### Classification report at the selected threshold
+
+| Class | Precision | Recall | F1-score | Support |
+|---|---:|---:|---:|---:|
+| Normal (0) | 0.78 | 0.93 | 0.85 | 9,711 |
+| Attack (1) | 0.94 | 0.81 | 0.87 | 12,833 |
+| Macro average | 0.86 | 0.87 | 0.86 | 22,544 |
+| Weighted average | 0.87 | 0.86 | 0.86 | 22,544 |
 
 ### Confusion matrix
 
-Rows are actual labels; columns are predicted labels.
+Rows represent actual classes; columns represent predicted classes.
 
 |  | Predicted Normal | Predicted Attack |
 |---|---:|---:|
-| **Actual Normal** | 9,212 (TN) | 499 (FP) |
-| **Actual Attack** | 2,699 (FN) | 10,134 (TP) |
+| **Actual Normal** | 9,008 (TN) | 703 (FP) |
+| **Actual Attack** | 2,474 (FN) | 10,359 (TP) |
 
-The model correctly classified 19,346 of 22,544 test records, giving 85.81% accuracy at the selected threshold.
+The model detected 10,359 of 12,833 attack records. It missed 2,474 attacks (false negatives) and incorrectly flagged 703 normal records (false positives).
 
-### Important evaluation qualification
+### Evaluation note
 
-The supplied implementation computes the ROC curve using `y_test`, selects the Youden J threshold from that curve, and then reports predictions on the same test set. Therefore, the test labels influence threshold selection. The 85.81% result is the report's observed result, but it is **not an unbiased, untouched-test estimate**. For a rigorous evaluation, select the threshold on validation data, freeze it, and evaluate once on the test set.
-
-The report also contains two different training-accuracy contexts: 97.21% in its threshold-based accuracy summary and 99.65% as the epoch-50 Keras training-history accuracy. These are not directly interchangeable because they come from different calculation contexts/decision thresholds. They are labelled separately above rather than merged.
-
-See [the results and methodology notes](Reports/Final_Results.md) for additional context.
+The notebook selects the ROC threshold using `y_test` and evaluates predictions on that same test set. Therefore, test labels influence threshold selection. The 85.91% figure is the observed result in this notebook, but it is **not an independent, untouched-test estimate**. A more rigorous evaluation would select the threshold using validation data, freeze it, and then evaluate once on the test set.
 
 ## Limitations and Improvements
 
@@ -125,54 +143,16 @@ See [the results and methodology notes](Reports/Final_Results.md) for additional
 
 ## Reproducibility
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/SujitSaiY2007/AI-Driven-Intrusion-Detection-System-Using-DeepLearning.git
-cd AI-Driven-Intrusion-Detection-System-Using-DeepLearning
-```
-
-### 2. Install dependencies
-
-Use Python 3 and install the libraries used by the implementation:
-
-```bash
-pip install pandas numpy tensorflow scikit-learn matplotlib seaborn jupyter
-```
-
-For repeatable experiments, record and pin the exact package versions used in the environment in a `requirements.txt` file.
-
-### 3. Obtain the dataset
-
-Download the NSL-KDD dataset from its legitimate distribution source. Place the following files in the repository root (the paths expected by the script):
-
-- `KDDTrain+.txt`
-- `KDDTest+.txt`
-
-The dataset is not included in this repository. Review the dataset source's terms before redistribution.
-
-### 4. Run the implementation
-
-Run the complete Python script from the repository root:
-
-```bash
-python Code/AI_Intrusion_Detection_System.py
-```
-
-Confirm that `KDDTrain+.txt` and `KDDTest+.txt` are present in the current working directory before execution.
-
-### 5. Reproducibility considerations
-
-- The supplied code does not explicitly set Python, NumPy, and TensorFlow random seeds. Neural-network results may therefore vary between runs.
-- Record the Python and library versions, dataset source, and execution environment alongside reported metrics.
-- Keep the test set separate from threshold selection for an unbiased final evaluation.
+1. Install the required libraries: `pandas`, `numpy`, `tensorflow`, `scikit-learn`, `matplotlib`, and `seaborn`.
+2. Download the NSL-KDD files `KDDTrain+.txt` and `KDDTest+.txt` and place them where the notebook can access them.
+3. Open the notebook in Google Colab or Jupyter and run the cells in order.
 
 ## Repository Structure
 
 ```text
 .
 ├── Code/
-│   └── AI_Intrusion_Detection_System.py
+│   ├── AI_Intrusion_Detection_System.py\n│   └── AI-Driven-IDS-Execution-Colab-File.ipynb
 ├── Architecture/
 │   └── System_Architecture.md
 ├── README.md
