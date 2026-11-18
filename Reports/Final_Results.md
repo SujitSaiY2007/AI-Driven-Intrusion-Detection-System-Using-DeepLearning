@@ -1,90 +1,113 @@
 # Final Results and Evaluation Notes
 
-This file records the metrics reported in the submitted project report, `MDP_Report_IDS.docx`, and explains how they should be interpreted.
+**Source:** Saved execution outputs in `AI-Driven-IDS-Execution-Colab-File(1).ipynb`. The figures below are transcribed from that notebook, not from a separate project report.
 
-## Dataset
+## Dataset and preprocessing
 
-| Property | Training | Test |
+| Item | Training set | Test set |
 |---|---:|---:|
-| Samples | 125,973 | 22,544 |
-| Normal samples | 67,343 | 9,711 |
-| Attack samples | 58,630 | 12,833 |
-| Encoded columns, including target | 123 | 123 |
-| Input features | 122 | 122 |
+| Original records | 125,973 | 22,544 |
+| Original columns | 43 | 43 |
+| Columns after one-hot encoding, including label | 123 | 123 |
+| Model input features | 122 | 122 |
 
-The raw NSL-KDD files contain 43 columns: 41 traffic attributes, the class label, and the difficulty field. The difficulty field is removed. One-hot encoding expands the categorical attributes, resulting in 122 model input features plus the target label.
+The notebook removes the `difficulty` column, maps `normal` to 0 and all other labels to 1, applies one-hot encoding, aligns test columns to the training columns, and standardizes the features.
 
-## Model configuration
+## Model and training configuration
 
-- Fully connected ANN/DNN with hidden layer sizes 256, 128, 64, and 32.
-- ReLU activation in hidden layers and sigmoid output for binary classification.
+- ANN hidden layers: 256, 128, 64, and 32 neurons.
+- ReLU hidden activations; sigmoid output.
 - Batch Normalization after the first three Dense layers.
-- Dropout rates 0.4, 0.3, and 0.3.
-- L2 kernel regularization of 1e-4 on the first three Dense layers.
-- Adam optimizer, initial learning rate 0.001.
+- Dropout: 0.4, 0.3, and 0.3.
+- L2 kernel regularization: 1e-4 on the first three Dense layers.
+- Adam optimizer; initial learning rate 0.001.
 - Binary Crossentropy loss.
-- Maximum 50 epochs, batch size 256, validation split 20%.
-- EarlyStopping (patience 7, restore best weights) and ReduceLROnPlateau (factor 0.5, patience 3, minimum learning rate 1e-6).
-- Balanced class weights: Normal 0.9353; Attack 1.0743.
+- Maximum 50 epochs; batch size 256; validation split 20%.
+- EarlyStopping: monitor `val_loss`, patience 7, restore best weights.
+- ReduceLROnPlateau: monitor `val_loss`, factor 0.5, patience 3, minimum learning rate 1e-6.
+- Class weights: Normal (0) = 0.9353088; Attack (1) = 1.0743050.
 
-## Reported training history
+## Training history
 
-| Epoch | Training accuracy | Validation accuracy | Training loss | Validation loss |
-|---:|---:|---:|---:|---:|
-| 1 | 97.09% | 99.11% | 0.1242 | 0.0607 |
-| 5 | 99.03% | 99.25% | 0.0494 | 0.0416 |
-| 10 | 99.14% | 99.25% | 0.0373 | 0.0314 |
-| 20 | 99.29% | 99.53% | 0.0301 | 0.0241 |
-| 30 | 99.40% | 99.62% | 0.0280 | 0.0222 |
-| 40 | 99.56% | 99.65% | 0.0211 | 0.0178 |
-| 50 | 99.65% | 99.71% | 0.0168 | 0.0149 |
+The notebook completed all 50 epochs. Selected logged values:
 
-The report's separate accuracy summary gives 97.21% training accuracy. This differs from the epoch-50 Keras training-history accuracy of 99.65%. The two figures are produced in different evaluation contexts and should not be described as the same metric.
+| Epoch | Training accuracy | Validation accuracy | Training loss | Validation loss | Learning rate |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 97.06% | 99.06% | 0.1211 | 0.0619 | 0.001 |
+| 10 | 99.15% | 99.37% | 0.0361 | 0.0303 | 0.001 |
+| 20 | 99.43% | 99.60% | 0.0260 | 0.0223 | 0.0005 |
+| 30 | 99.53% | 99.63% | 0.0215 | 0.0186 | 0.0005 |
+| 40 | 99.65% | 99.73% | 0.0177 | 0.0150 | 0.00025 |
+| 50 | 99.66% | 99.73% | 0.0157 | 0.0138 | 0.00025 |
 
-## Test results reported
+Final epoch values: training accuracy 99.66%, validation accuracy 99.73%, training loss 0.0157, validation loss 0.0138.
 
-The report uses a Youden J threshold of 0.0031.
+## Test evaluation
+
+### Keras evaluation at the default threshold
+
+The call to `model.evaluate(X_test, y_test)` reports:
+
+| Metric | Value |
+|---|---:|
+| Test accuracy | 81.32% |
+| Test loss | 1.5212 |
+
+This uses the default binary accuracy decision threshold (0.5).
+
+### Evaluation using the ROC-selected threshold
+
+The notebook calculates the ROC curve and selects the threshold maximizing Youden's J statistic:
+
+```
+Youden's J = True Positive Rate - False Positive Rate
+```
+
+| Metric | Value |
+|---|---:|
+| Selected threshold | 0.0031 |
+| Correct test predictions | 19,367 / 22,544 |
+| Threshold-based test accuracy | 85.91% |
+| Training accuracy at the same threshold | 97.20% (122,443 / 125,973) |
+
+The 81.32% Keras test accuracy and 85.91% threshold-based test accuracy are different because they use different decision thresholds.
+
+## Classification report at threshold 0.0031
 
 | Class | Precision | Recall | F1-score | Support |
 |---|---:|---:|---:|---:|
-| Normal (0) | 0.77 | 0.95 | 0.85 | 9,711 |
-| Attack (1) | 0.95 | 0.79 | 0.86 | 12,833 |
+| Normal (0) | 0.78 | 0.93 | 0.85 | 9,711 |
+| Attack (1) | 0.94 | 0.81 | 0.87 | 12,833 |
 | Macro average | 0.86 | 0.87 | 0.86 | 22,544 |
-| Weighted average | 0.88 | 0.86 | 0.86 | 22,544 |
+| Weighted average | 0.87 | 0.86 | 0.86 | 22,544 |
 
-### Confusion matrix
+## Confusion matrix
+
+Rows are actual classes; columns are predicted classes.
 
 |  | Predicted Normal | Predicted Attack |
 |---|---:|---:|
-| Actual Normal | 9,212 (TN) | 499 (FP) |
-| Actual Attack | 2,699 (FN) | 10,134 (TP) |
+| Actual Normal | 9,008 (TN) | 703 (FP) |
+| Actual Attack | 2,474 (FN) | 10,359 (TP) |
 
-Correct predictions: 9,212 + 10,134 = 19,346.
+Correct predictions: 9,008 + 10,359 = 19,367.
 
-Test accuracy: 19,346 / 22,544 = 85.81%.
+Test accuracy: 19,367 / 22,544 = 85.91%.
 
-## How to interpret the results
+### Interpretation
 
-- Normal recall of approximately 95% means most legitimate records in the test set were correctly classified as normal.
-- Attack precision of approximately 95% means most records predicted as attacks were attacks in this test set.
-- Attack recall of approximately 79% means the model detected about four out of five actual attack records; approximately one out of five attack records was missed.
-- The 2,699 false negatives are particularly important in an intrusion-detection context because they represent attacks classified as normal.
-- The 499 false positives represent normal records incorrectly flagged as attacks.
+- **Normal recall (0.93):** approximately 93% of actual normal records were classified correctly.
+- **Attack precision (0.94):** approximately 94% of records predicted as attacks were actual attacks.
+- **Attack recall (0.81):** approximately 81% of actual attack records were detected.
+- **False negatives (2,474):** attack records incorrectly classified as normal.
+- **False positives (703):** normal records incorrectly classified as attacks.
 
 ## Evaluation limitation: threshold-selection leakage
 
-The implementation obtains probabilities for the test set, calculates the ROC curve using `y_test`, selects the threshold maximizing Youden's J statistic, and then evaluates predictions on that same test set.
+The notebook computes `roc_curve(y_test, y_prob)`, chooses the Youden J threshold using the test labels, and then evaluates predictions on the same test set. The test labels therefore influence threshold selection.
 
-This means the test labels have influenced the selected threshold. Consequently, the 85.81% test accuracy and associated threshold-based classification metrics are the observed results from this experiment, but they should not be presented as a fully independent final test estimate.
-
-Recommended correction for a future rigorous experiment:
-
-1. Split the original training data into training and validation subsets.
-2. Fit the model on the training subset.
-3. Select the threshold using validation labels and validation probabilities only.
-4. Freeze that threshold.
-5. Evaluate once on KDDTest+ without using its labels to make any model or threshold decisions.
+The reported 85.91% threshold-based accuracy and the associated classification metrics are the actual notebook outputs, but they are **not an independent, untouched-test estimate**. For a stronger evaluation, select the threshold using validation predictions and labels, freeze it, and evaluate once on the test set.
 
 ## Scope
 
-This is an offline, dataset-based binary classifier. It does not perform live packet capture, real-time network monitoring, automated blocking, or incident response. NSL-KDD benchmark performance alone does not establish production-network effectiveness.
+This is an offline, dataset-based binary classifier. It does not capture live packets, monitor a live network, block traffic, or perform incident response. Performance on NSL-KDD alone does not establish effectiveness on modern production networks.
