@@ -25,9 +25,6 @@ The workflow covers dataset loading, preprocessing, categorical feature encoding
 
 ## Architecture Diagram
 
-The diagram below is embedded directly in this README using Mermaid, so GitHub can render it without a separate image file.
-
-```mermaid
 flowchart LR
     A["NSL-KDD Data"] --> B["Preprocessing<br/>Labels · One-hot encoding<br/>Feature alignment"]
     B --> C["Scaling<br/>StandardScaler"]
