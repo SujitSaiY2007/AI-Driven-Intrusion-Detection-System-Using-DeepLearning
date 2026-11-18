@@ -181,42 +181,16 @@ Matplotlib creates the plots, while Seaborn renders the confusion-matrix heatmap
 
 ## 11. End-to-End Data Flow
 
-```text
-NSL-KDD train/test text files
-            |
-            v
-       Pandas loading
-            |
-            v
-  Binary label conversion
-  + difficulty-column removal
-            |
-            v
-      One-hot encoding
-            |
-            v
-   Train/test feature alignment
-            |
-            v
-    X/y separation and scaling
-            |
-            v
-   Class-weight calculation
-            |
-            v
-       ANN model training
-            |
-            v
-      Sigmoid score output
-            |
-            v
-   ROC threshold selection
-            |
-            v
-     Normal / Attack output
-            |
-            v
-  Metrics and visual evaluation
+The simplified horizontal view below summarizes the complete processing path.
+
+```mermaid
+flowchart LR
+    A["NSL-KDD"] --> B["Preprocess<br/>Encode + align"]
+    B --> C["Scale<br/>StandardScaler"]
+    C --> D["DNN<br/>256 → 128 → 64 → 32"]
+    D --> E["Threshold<br/>ROC / Youden J"]
+    E --> F["Classify<br/>Normal / Attack"]
+    F --> G["Evaluate<br/>Metrics + plots"]
 ```
 
 ## 12. Limitations and Future Engineering Work
