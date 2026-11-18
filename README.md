@@ -25,14 +25,16 @@ The workflow covers dataset loading, preprocessing, categorical feature encoding
 
 ## Architecture Diagram
 
-```
+```mermaid
 flowchart LR
-    A["NSL-KDD Data"] --> B["Preprocessing<br/>Labels · One-hot encoding<br/>Feature alignment"]
-    B --> C["Scaling<br/>StandardScaler"]
-    C --> D["Deep Neural Network<br/>256 → 128 → 64 → 32"]
-    D --> E["Prediction<br/>Sigmoid + ROC threshold"]
-    E --> F["Output<br/>Normal / Attack"]
-    F --> G["Evaluation<br/>Confusion matrix · Precision<br/>Recall · F1 · Accuracy"]
+    A["NSL-KDD Dataset"] --> B["Preprocessing<br/>Binary labels · One-hot encoding<br/>Feature alignment · Scaling"]
+    B --> C["ANN Training<br/>Class weights · Validation split<br/>Early stopping · Adam"]
+    C --> D["Sigmoid Scores"]
+    D --> E["ROC Threshold Selection<br/>Youden's J"]
+    E --> F["Classification<br/>Normal / Attack"]
+    F --> G["Evaluation<br/>Confusion matrix · Precision<br/>Recall · F1-score · Accuracy"]
+
+    E -.-> H["Current implementation selects<br/>threshold using test labels"]
 ```
 
 ### Neural Network Configuration
