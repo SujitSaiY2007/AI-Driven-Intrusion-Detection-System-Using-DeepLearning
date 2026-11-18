@@ -69,7 +69,7 @@ flowchart TD
 
 ## Results
 
-The notebook evaluates the trained classifier using:
+The implementation evaluates the trained classifier using:
 
 - Test loss and default-threshold test accuracy from Keras evaluation.
 - Confusion matrix.
@@ -113,7 +113,7 @@ cd AI-Driven-Intrusion-Detection-System-Using-DeepLearning
 
 ### 2. Install dependencies
 
-Use Python 3 and install the libraries used by the notebook:
+Use Python 3 and install the libraries used by the implementation:
 
 ```bash
 pip install pandas numpy tensorflow scikit-learn matplotlib seaborn jupyter
@@ -123,16 +123,22 @@ For repeatable experiments, record and pin the exact package versions used in th
 
 ### 3. Obtain the dataset
 
-Download the NSL-KDD dataset from its legitimate distribution source. Place the following files in the working directory expected by the notebook:
+Download the NSL-KDD dataset from its legitimate distribution source. Place the following files in the repository root (the paths expected by the script):
 
 - `KDDTrain+.txt`
 - `KDDTest+.txt`
 
 The dataset is not included in this repository. Review the dataset source's terms before redistribution.
 
-### 4. Run the notebook
+### 4. Run the implementation
 
-Open the notebook in Jupyter or Google Colab and execute the cells in order. Confirm that the dataset paths match the files' locations.
+Run the complete Python script from the repository root:
+
+```bash
+python Code/AI_Intrusion_Detection_System.py
+```
+
+Confirm that `KDDTrain+.txt` and `KDDTest+.txt` are present in the current working directory before execution.
 
 ### 5. Reproducibility considerations
 
@@ -145,7 +151,7 @@ Open the notebook in Jupyter or Google Colab and execute the cells in order. Con
 ```text
 .
 ├── Code/
-│   └── AI_Intrusion_Detection_System.ipynb
+│   └── AI_Intrusion_Detection_System.py
 ├── Architecture/
 │   └── System_Architecture.md
 ├── README.md
