@@ -28,27 +28,13 @@ The workflow covers dataset loading, preprocessing, categorical feature encoding
 The diagram below is embedded directly in this README using Mermaid, so GitHub can render it without a separate image file.
 
 ```mermaid
-flowchart TD
-    A["NSL-KDD Dataset<br/>KDDTrain+ and KDDTest+"] --> B["Load records<br/>Assign column names"]
-    B --> C["Label preparation<br/>Normal = 0, Attack = 1"]
-    C --> D["Remove difficulty column"]
-    D --> E["One-hot encode categorical features"]
-    E --> F["Align train and test feature columns"]
-    F --> G["Separate features (X) and labels (y)"]
-    G --> H["StandardScaler<br/>Fit on training data; transform both sets"]
-    H --> I["Class-weight calculation<br/>Balanced class weights"]
-    I --> J["ANN training<br/>Dense: 256 → 128 → 64 → 32"]
-    J --> K["Regularization and training controls<br/>Batch Normalization, Dropout, L2,<br/>EarlyStopping, ReduceLROnPlateau"]
-    K --> L["Sigmoid output<br/>Attack probability"]
-    L --> M["ROC analysis and threshold selection"]
-    M --> N["Binary classification<br/>Normal (0) / Attack (1)"]
-    N --> O["Evaluation<br/>Confusion Matrix, Precision, Recall,<br/>F1-score, Accuracy"]
-    O --> P["Visualizations<br/>Learning curves, heatmap,<br/>prediction distribution, accuracy comparison"]
-
-    style A fill:#e8f1ff,stroke:#3973ac,color:#172b4d
-    style J fill:#e9f7ef,stroke:#39845a,color:#173b28
-    style N fill:#fff4df,stroke:#bd8425,color:#513b12
-    style O fill:#f3eaff,stroke:#8656ad,color:#352044
+flowchart LR
+    A["NSL-KDD Data"] --> B["Preprocessing<br/>Labels · One-hot encoding<br/>Feature alignment"]
+    B --> C["Scaling<br/>StandardScaler"]
+    C --> D["Deep Neural Network<br/>256 → 128 → 64 → 32"]
+    D --> E["Prediction<br/>Sigmoid + ROC threshold"]
+    E --> F["Output<br/>Normal / Attack"]
+    F --> G["Evaluation<br/>Confusion matrix · Precision<br/>Recall · F1 · Accuracy"]
 ```
 
 ### Neural Network Configuration
@@ -69,18 +55,53 @@ flowchart TD
 
 ## Results
 
-The implementation evaluates the trained classifier using:
+The following values are transcribed from the project's final report, `MDP_Report_IDS.docx`.
 
-- Test loss and default-threshold test accuracy from Keras evaluation.
-- Confusion matrix.
-- Per-class precision, recall, F1-score, and support.
-- Training and validation accuracy/loss curves.
-- Prediction distribution.
-- Training-versus-test accuracy calculated using the selected classification threshold.
+### Dataset
 
-**Insert the exact values from the final executed notebook here before publishing numerical performance claims.** The source code alone does not establish the final metric values, so this README intentionally does not invent accuracy, precision, recall, or F1-score figures.
+| Item | Training set | Test set |
+|---|---:|---:|
+| Samples | 125,973 | 22,544 |
+| Normal records | 67,343 | 9,711 |
+| Attack records | 58,630 | 12,833 |
+| Encoded columns including label | 123 | 123 |
+| Model input features | 122 | 122 |
 
-**Evaluation note:** In the supplied implementation, the ROC threshold is selected using `y_test` and then evaluated on that same test set. This uses test labels during threshold selection, so the resulting threshold-based test metrics are not an independent final estimate. For a rigorous final evaluation, select and freeze the threshold using validation data, then evaluate once on the untouched test set.
+### Reported model performance
+
+| Metric | Reported value |
+|---|---:|
+| Training accuracy (separate threshold-based summary) | 97.21% |
+| Validation accuracy (epoch 50 training history) | 99.71% |
+| Test accuracy (Youden-threshold predictions) | **85.81%** |
+| Selected Youden J threshold | 0.0031 |
+| Normal precision | 0.77 |
+| Normal recall | 0.95 |
+| Normal F1-score | 0.85 |
+| Attack precision | 0.95 |
+| Attack recall | 0.79 |
+| Attack F1-score | 0.86 |
+| Macro-average F1-score | 0.86 |
+| Weighted-average F1-score | 0.86 |
+
+### Confusion matrix
+
+Rows are actual labels; columns are predicted labels.
+
+|  | Predicted Normal | Predicted Attack |
+|---|---:|---:|
+| **Actual Normal** | 9,212 (TN) | 499 (FP) |
+| **Actual Attack** | 2,699 (FN) | 10,134 (TP) |
+
+The model correctly classified 19,346 of 22,544 test records, giving 85.81% accuracy at the selected threshold.
+
+### Important evaluation qualification
+
+The supplied implementation computes the ROC curve using `y_test`, selects the Youden J threshold from that curve, and then reports predictions on the same test set. Therefore, the test labels influence threshold selection. The 85.81% result is the report's observed result, but it is **not an unbiased, untouched-test estimate**. For a rigorous evaluation, select the threshold on validation data, freeze it, and evaluate once on the test set.
+
+The report also contains two different training-accuracy contexts: 97.21% in its threshold-based accuracy summary and 99.65% as the epoch-50 Keras training-history accuracy. These are not directly interchangeable because they come from different calculation contexts/decision thresholds. They are labelled separately above rather than merged.
+
+See [the results and methodology notes](Reports/Final_Results.md) for additional context.
 
 ## Limitations and Improvements
 
