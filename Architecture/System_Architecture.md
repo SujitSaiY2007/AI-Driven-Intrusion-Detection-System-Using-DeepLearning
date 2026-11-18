@@ -181,17 +181,21 @@ Matplotlib creates the plots, while Seaborn renders the confusion-matrix heatmap
 
 ## 11. End-to-End Data Flow
 
-The simplified horizontal view below summarizes the complete processing path.
+The diagram below shows the implemented pipeline from the NSL-KDD files through preprocessing, model training, prediction, and evaluation.
 
 ```mermaid
 flowchart LR
-    A["NSL-KDD"] --> B["Preprocess<br/>Encode + align"]
-    B --> C["Scale<br/>StandardScaler"]
-    C --> D["DNN<br/>256 → 128 → 64 → 32"]
-    D --> E["Threshold<br/>ROC / Youden J"]
-    E --> F["Classify<br/>Normal / Attack"]
-    F --> G["Evaluate<br/>Metrics + plots"]
+    A["NSL-KDD Dataset"] --> B["Preprocessing<br/>Binary labels · One-hot encoding<br/>Feature alignment · Scaling"]
+    B --> C["ANN Training<br/>Class weights · Validation split<br/>Early stopping · Adam"]
+    C --> D["Sigmoid Scores"]
+    D --> E["ROC Threshold Selection<br/>Youden's J"]
+    E --> F["Classification<br/>Normal / Attack"]
+    F --> G["Evaluation<br/>Confusion matrix · Precision<br/>Recall · F1-score · Accuracy"]
+
+    E -.-> H["Current implementation selects<br/>threshold using test labels"]
 ```
+
+**Evaluation note:** The threshold-selection step currently uses the test labels to calculate the ROC curve. This is shown explicitly because it affects how the reported test metrics should be interpreted. For an unbiased final evaluation, threshold selection should use validation data, with the test set held untouched until the final evaluation.
 
 ## 12. Limitations and Future Engineering Work
 
