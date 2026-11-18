@@ -25,6 +25,7 @@ The workflow covers dataset loading, preprocessing, categorical feature encoding
 
 ## Architecture Diagram
 
+```
 flowchart LR
     A["NSL-KDD Data"] --> B["Preprocessing<br/>Labels · One-hot encoding<br/>Feature alignment"]
     B --> C["Scaling<br/>StandardScaler"]
